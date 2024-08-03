@@ -9,19 +9,20 @@ class Category(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
-    type = Column(String)  # 'expense' or 'income'
+    type = Column(String)
     monthly_budget = Column(Float)
     is_default = Column(Boolean, default=False)
     goal_amount = Column(Float, nullable=True)
 
     transactions = relationship("Transaction", back_populates="category")
+    budget_allocations = relationship("BudgetAllocation", back_populates="category")
 
 class Account(Base):
     __tablename__ = "accounts"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
-    type = Column(String)  # 'checking', 'savings', 'credit_card', etc.
+    type = Column(String)
     balance = Column(Float)
 
     transactions = relationship("Transaction", back_populates="account")
@@ -60,4 +61,4 @@ class BudgetAllocation(Base):
     amount = Column(Float)
     category_id = Column(Integer, ForeignKey("categories.id"))
 
-    category = relationship("Category")
+    category = relationship("Category", back_populates="budget_allocations")
