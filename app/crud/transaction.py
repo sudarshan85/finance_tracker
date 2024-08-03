@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from app.db.models import Transaction
-from app.schemas.transaction import TransactionCreate, TransactionUpdate
+from app.schemas.transaction import TransactionCreate, TransactionUpdate, TransactionStatus
 
 def get_transaction(db: Session, transaction_id: int):
     return db.query(Transaction).filter(Transaction.id == transaction_id).first()
@@ -15,6 +15,13 @@ def create_transaction(db: Session, transaction: TransactionCreate):
     db.refresh(db_transaction)
     return db_transaction
 
+def delete_transaction(db: Session, transaction_id: int):
+    db_transaction = get_transaction(db, transaction_id)
+    if db_transaction:
+        db.delete(db_transaction)
+        db.commit()
+    return db_transaction
+
 def update_transaction(db: Session, transaction_id: int, transaction: TransactionUpdate):
     db_transaction = get_transaction(db, transaction_id)
     if db_transaction:
@@ -25,9 +32,10 @@ def update_transaction(db: Session, transaction_id: int, transaction: Transactio
         db.refresh(db_transaction)
     return db_transaction
 
-def delete_transaction(db: Session, transaction_id: int):
+def complete_transaction(db: Session, transaction_id: int):
     db_transaction = get_transaction(db, transaction_id)
     if db_transaction:
-        db.delete(db_transaction)
+        db_transaction.status = TransactionStatus.COMPLETED
         db.commit()
+        db.refresh(db_transaction)
     return db_transaction

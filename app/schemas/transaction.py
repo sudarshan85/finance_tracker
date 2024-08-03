@@ -1,6 +1,11 @@
 from pydantic import BaseModel
 from datetime import date
 from typing import Optional
+from enum import Enum
+
+class TransactionStatus(str, Enum):
+    PENDING = "PENDING"
+    COMPLETED = "COMPLETED"
 
 class TransactionBase(BaseModel):
     date: date
@@ -8,8 +13,8 @@ class TransactionBase(BaseModel):
     description: str
     account_id: int
     category_id: int
-    memo: Optional[str] = None
     store_id: Optional[int] = None
+    status: TransactionStatus = TransactionStatus.PENDING
 
 class TransactionCreate(TransactionBase):
     pass
@@ -20,8 +25,8 @@ class TransactionUpdate(BaseModel):
     description: Optional[str] = None
     account_id: Optional[int] = None
     category_id: Optional[int] = None
-    memo: Optional[str] = None
     store_id: Optional[int] = None
+    status: Optional[TransactionStatus] = None
 
 class Transaction(TransactionBase):
     id: int

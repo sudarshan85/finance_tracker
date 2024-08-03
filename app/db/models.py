@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Date, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, Float, Date, Boolean, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -38,20 +38,19 @@ class Store(Base):
 
 class Transaction(Base):
     __tablename__ = "transactions"
-
     id = Column(Integer, primary_key=True, index=True)
     date = Column(Date, index=True)
     amount = Column(Float)
     description = Column(String)
-    memo = Column(String, nullable=True)
     account_id = Column(Integer, ForeignKey("accounts.id"))
     category_id = Column(Integer, ForeignKey("categories.id"))
     store_id = Column(Integer, ForeignKey("stores.id"), nullable=True)
+    status = Column(Enum("PENDING", "COMPLETED"), default="PENDING")
 
     account = relationship("Account", back_populates="transactions")
     category = relationship("Category", back_populates="transactions")
     store = relationship("Store", back_populates="transactions")
-
+    
 class BudgetAllocation(Base):
     __tablename__ = "budget_allocations"
 

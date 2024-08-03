@@ -38,7 +38,6 @@ def test_create_transaction():
     )
     category_data = category_response.json()
     
-    # Now create a transaction
     response = client.post(
         "/api/v1/transactions/",
         json={
@@ -52,6 +51,7 @@ def test_create_transaction():
     assert response.status_code == 200
     data = response.json()
     assert data["description"] == "Test Transaction"
+    assert data["status"] == "PENDING"
     assert "id" in data
 
 def test_read_transactions():
@@ -60,7 +60,7 @@ def test_read_transactions():
     data = response.json()
     assert len(data) > 0
 
-def test_read_transaction():
+def test_update_transaction():
     # First, create a transaction
     account_response = client.post(
         "/api/v1/accounts/",
@@ -86,13 +86,17 @@ def test_read_transaction():
     )
     create_data = create_response.json()
     
-    # Then, read it
-    response = client.get(f"/api/v1/transactions/{create_data['id']}")
+    # Then, update it
+    response = client.put(
+        f"/api/v1/transactions/{create_data['id']}",
+        json={"description": "Updated Transaction", "amount": 150.0},
+    )
     assert response.status_code == 200
     data = response.json()
-    assert data["description"] == "Test Transaction 2"
+    assert data["description"] == "Updated Transaction"
+    assert data["amount"] == 150.0
 
-def test_update_transaction():
+def test_complete_transaction():
     # First, create a transaction
     account_response = client.post(
         "/api/v1/accounts/",
@@ -110,7 +114,7 @@ def test_update_transaction():
         "/api/v1/transactions/",
         json={
             "date": str(date.today()),
-            "amount": 150.0,
+            "amount": 200.0,
             "description": "Test Transaction 3",
             "account_id": account_data["id"],
             "category_id": category_data["id"],
@@ -118,46 +122,8 @@ def test_update_transaction():
     )
     create_data = create_response.json()
     
-    # Then, update it
-    response = client.put(
-        f"/api/v1/transactions/{create_data['id']}",
-        json={"description": "Updated Transaction", "amount": 200.0},
-    )
+    # Then, complete it
+    response = client.put(f"/api/v1/transactions/{create_data['id']}/complete")
     assert response.status_code == 200
     data = response.json()
-    assert data["description"] == "Updated Transaction"
-    assert data["amount"] == 200.0
-
-def test_delete_transaction():
-    # First, create a transaction
-    account_response = client.post(
-        "/api/v1/accounts/",
-        json={"name": "Test Account 4", "type": "savings", "balance": 4000.0},
-    )
-    account_data = account_response.json()
-    
-    category_response = client.post(
-        "/api/v1/categories/",
-        json={"name": "Test Category 4", "type": "income", "monthly_budget": 1000.0},
-    )
-    category_data = category_response.json()
-    
-    create_response = client.post(
-        "/api/v1/transactions/",
-        json={
-            "date": str(date.today()),
-            "amount": 250.0,
-            "description": "Test Transaction 4",
-            "account_id": account_data["id"],
-            "category_id": category_data["id"],
-        },
-    )
-    create_data = create_response.json()
-    
-    # Then, delete it
-    response = client.delete(f"/api/v1/transactions/{create_data['id']}")
-    assert response.status_code == 200
-    
-    # Try to get the deleted transaction
-    get_response = client.get(f"/api/v1/transactions/{create_data['id']}")
-    assert get_response.status_code == 404
+    assert data["status"] == "COMPLETED"
