@@ -17,16 +17,25 @@ class Category(Base):
     transactions = relationship("Transaction", back_populates="category")
     budget_allocations = relationship("BudgetAllocation", back_populates="category")
 
+class Reconciliation(Base):
+    __tablename__ = "reconciliations"
+    id = Column(Integer, primary_key=True, index=True)
+    date = Column(Date, index=True)
+    account_id = Column(Integer, ForeignKey("accounts.id"))
+
+    account = relationship("Account", back_populates="reconciliations")
+
 class Account(Base):
     __tablename__ = "accounts"
-
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, index=True)
     type = Column(String)
     balance = Column(Float)
+    last_reconciled = Column(Date, nullable=True)
 
     transactions = relationship("Transaction", back_populates="account")
-
+    reconciliations = relationship("Reconciliation", back_populates="account")
+    
 class Store(Base):
     __tablename__ = "stores"
 
