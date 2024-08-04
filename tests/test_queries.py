@@ -18,7 +18,7 @@ def test_query_accounts():
 
     # Test 1: Query all accounts (no filters)
     query_params = QueryParams()
-    response = client.post("/api/v1/accounts/query", json=query_params.dict())
+    response = client.post("/api/v1/accounts/query", json=query_params.model_dump())
     assert response.status_code == 200
     data = response.json()
     assert len(data) >= len(accounts)
@@ -29,7 +29,7 @@ def test_query_accounts():
             FilterCondition(field="type", operator="eq", value="checking", data_type="string")
         ]
     )
-    response = client.post("/api/v1/accounts/query", json=query_params.dict())
+    response = client.post("/api/v1/accounts/query", json=query_params.model_dump())
     assert response.status_code == 200
     data = response.json()
     assert all(account["type"] == "checking" for account in data)
@@ -41,7 +41,7 @@ def test_query_accounts():
             FilterCondition(field="balance", operator="lt", value=5500, data_type="number")
         ]
     )
-    response = client.post("/api/v1/accounts/query", json=query_params.dict())
+    response = client.post("/api/v1/accounts/query", json=query_params.model_dump())
     assert response.status_code == 200
     data = response.json()
     assert all(1500 < account["balance"] < 5500 for account in data)
@@ -50,7 +50,7 @@ def test_query_accounts():
     query_params = QueryParams(
         sort=[SortOrder(field="balance", direction="desc")]
     )
-    response = client.post("/api/v1/accounts/query", json=query_params.dict())
+    response = client.post("/api/v1/accounts/query", json=query_params.model_dump())
     assert response.status_code == 200
     data = response.json()
     assert data[0]["balance"] >= data[-1]["balance"]
@@ -62,7 +62,7 @@ def test_query_accounts():
             FilterCondition(field="id", operator="eq", value=specific_account['id'], data_type="number")
         ]
     )
-    response = client.post("/api/v1/accounts/query", json=query_params.dict())
+    response = client.post("/api/v1/accounts/query", json=query_params.model_dump())
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 1
@@ -71,3 +71,71 @@ def test_query_accounts():
     # Clean up
     for account in created_accounts:
         client.delete(f"/api/v1/accounts/{account['id']}")
+
+def test_query_categories():
+    # Setup: Create multiple categories
+    categories = [
+        {"name": "Food", "type": "expense", "monthly_budget": 500.0},
+        {"name": "Rent", "type": "expense", "monthly_budget": 1000.0},
+        {"name": "Salary", "type": "income", "monthly_budget": 3000.0},
+    ]
+    created_categories = []
+    for category in categories:
+        response = client.post("/api/v1/categories/", json=category)
+        created_categories.append(response.json())
+
+    # Test 1: Query all categories (no filters)
+    query_params = QueryParams()
+    response = client.post("/api/v1/categories/query", json=query_params.model_dump())
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) >= len(categories)
+
+    # Test 2: Query with type filter
+    query_params = QueryParams(
+        filters=[
+            FilterCondition(field="type", operator="eq", value="expense", data_type="string")
+        ]
+    )
+    response = client.post("/api/v1/categories/query", json=query_params.model_dump())
+    assert response.status_code == 200
+    data = response.json()
+    assert all(category["type"] == "expense" for category in data)
+
+    # Test 3: Query with monthly_budget range
+    query_params = QueryParams(
+        filters=[
+            FilterCondition(field="monthly_budget", operator="gt", value=700, data_type="number"),
+            FilterCondition(field="monthly_budget", operator="lt", value=2000, data_type="number")
+        ]
+    )
+    response = client.post("/api/v1/categories/query", json=query_params.model_dump())
+    assert response.status_code == 200
+    data = response.json()
+    assert all(700 < category["monthly_budget"] < 2000 for category in data)
+
+    # Test 4: Query with sorting
+    query_params = QueryParams(
+        sort=[SortOrder(field="monthly_budget", direction="desc")]
+    )
+    response = client.post("/api/v1/categories/query", json=query_params.model_dump())
+    assert response.status_code == 200
+    data = response.json()
+    assert data[0]["monthly_budget"] >= data[-1]["monthly_budget"]
+
+    # Test 5: Query specific category
+    specific_category = created_categories[0]
+    query_params = QueryParams(
+        filters=[
+            FilterCondition(field="id", operator="eq", value=specific_category['id'], data_type="number")
+        ]
+    )
+    response = client.post("/api/v1/categories/query", json=query_params.model_dump())
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]["id"] == specific_category['id']
+
+    # Clean up
+    for category in created_categories:
+        client.delete(f"/api/v1/categories/{category['id']}")        

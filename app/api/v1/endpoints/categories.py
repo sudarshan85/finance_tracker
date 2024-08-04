@@ -5,6 +5,7 @@ from typing import List
 from app.crud import category as category_crud
 from app.schemas.category import Category, CategoryCreate, CategoryUpdate
 from app.db.database import get_db
+from app.schemas.query import QueryParams
 
 router = APIRouter()
 
@@ -37,3 +38,8 @@ def delete_category(category_id: int, db: Session = Depends(get_db)):
     if db_category is None:
         raise HTTPException(status_code=404, detail="Category not found")
     return db_category
+
+@router.post("/query", response_model=List[Category])
+def query_categories(query_params: QueryParams, db: Session = Depends(get_db)):
+    categories = category_crud.get_categories(db, query_params)
+    return categories

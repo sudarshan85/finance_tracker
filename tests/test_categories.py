@@ -4,6 +4,7 @@ from sqlalchemy.orm import sessionmaker
 from app.main import app
 from app.db.database import get_db
 from app.db.models import Base
+from app.schemas.query import QueryParams
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 
@@ -34,7 +35,7 @@ def test_create_category():
     assert "id" in data
 
 def test_read_categories():
-    response = client.get("/api/v1/categories/")
+    response = client.post("/api/v1/categories/query", json=QueryParams().model_dump())
     assert response.status_code == 200
     data = response.json()
     assert len(data) > 0
