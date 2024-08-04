@@ -1,12 +1,22 @@
 from sqlalchemy.orm import Session
 from app.db.models import Account
 from app.schemas.account import AccountCreate, AccountUpdate
+from app.schemas.query import QueryParams
+from app.utils.query import apply_filters, apply_sorting
 
 def get_account(db: Session, account_id: int):
     return db.query(Account).filter(Account.id == account_id).first()
 
-def get_accounts(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(Account).offset(skip).limit(limit).all()
+def get_accounts(db: Session, query_params: QueryParams):
+    query = db.query(Account)
+    
+    if query_params.filters:
+        query = apply_filters(query, Account, query_params.filters)
+    
+    if query_params.sort:
+        query = apply_sorting(query, Account, query_params.sort)
+    
+    return query.offset(query_params.skip).limit(query_params.limit).all()
 
 def create_account(db: Session, account: AccountCreate):
     db_account = Account(**account.dict())
