@@ -3,8 +3,9 @@ from sqlalchemy.orm import Session
 from typing import List
 
 from app.crud import transaction as transaction_crud
-from app.schemas.transaction import Transaction, TransactionCreate, TransactionUpdate, TransactionStatus
+from app.schemas.transaction import Transaction, TransactionCreate, TransactionUpdate
 from app.db.database import get_db
+from app.schemas.query import QueryParams, PaginatedResponse
 
 router = APIRouter()
 
@@ -12,10 +13,15 @@ router = APIRouter()
 def create_transaction(transaction: TransactionCreate, db: Session = Depends(get_db)):
     return transaction_crud.create_transaction(db=db, transaction=transaction)
 
-@router.get("/", response_model=List[Transaction])
-def read_transactions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    transactions = transaction_crud.get_transactions(db, skip=skip, limit=limit)
-    return transactions
+@router.post("/query", response_model=PaginatedResponse[Transaction])
+def query_transactions(query_params: QueryParams, db: Session = Depends(get_db)):
+    transactions, total = transaction_crud.get_transactions(db, query_params)
+    return PaginatedResponse(
+        items=transactions,
+        total=total,
+        page=query_params.skip // query_params.limit + 1,
+        size=query_params.limit
+    )
 
 @router.get("/{transaction_id}", response_model=Transaction)
 def read_transaction(transaction_id: int, db: Session = Depends(get_db)):
