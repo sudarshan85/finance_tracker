@@ -16,7 +16,10 @@ def get_categories(db: Session, query_params: QueryParams):
     if query_params.sort:
         query = apply_sorting(query, Category, query_params.sort)
     
-    return query.offset(query_params.skip).limit(query_params.limit).all()
+    total = query.count()
+    categories = query.offset(query_params.skip).limit(query_params.limit).all()
+    
+    return categories, total
 
 def create_category(db: Session, category: CategoryCreate):
     db_category = Category(**category.model_dump())
