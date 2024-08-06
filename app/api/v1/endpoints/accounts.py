@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Tuple
 
 from app.crud import account as account_crud
 from app.schemas.account import Account, AccountCreate, AccountUpdate
 from app.db.database import get_db
-from app.schemas.query import QueryParams
+from app.schemas.query import QueryParams, PaginatedResponse
 
 router = APIRouter()
 
@@ -13,10 +13,15 @@ router = APIRouter()
 def create_account(account: AccountCreate, db: Session = Depends(get_db)):
     return account_crud.create_account(db=db, account=account)
 
-@router.get("/", response_model=List[Account])
-def read_accounts(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    accounts = account_crud.get_accounts(db, skip=skip, limit=limit)
-    return accounts
+@router.post("/query", response_model=PaginatedResponse[Account])
+def query_accounts(query_params: QueryParams, db: Session = Depends(get_db)):
+    accounts, total = account_crud.get_accounts(db, query_params)
+    return PaginatedResponse(
+        items=accounts,
+        total=total,
+        page=query_params.skip // query_params.limit + 1,
+        size=query_params.limit
+    )
 
 @router.get("/{account_id}", response_model=Account)
 def read_account(account_id: int, db: Session = Depends(get_db)):
@@ -38,8 +43,3 @@ def delete_account(account_id: int, db: Session = Depends(get_db)):
     if db_account is None:
         raise HTTPException(status_code=404, detail="Account not found")
     return db_account
-
-@router.post("/query", response_model=List[Account])
-def query_accounts(query_params: QueryParams, db: Session = Depends(get_db)):
-    accounts = account_crud.get_accounts(db, query_params)
-    return accounts

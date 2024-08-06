@@ -16,10 +16,13 @@ def get_accounts(db: Session, query_params: QueryParams):
     if query_params.sort:
         query = apply_sorting(query, Account, query_params.sort)
     
-    return query.offset(query_params.skip).limit(query_params.limit).all()
+    total = query.count()
+    accounts = query.offset(query_params.skip).limit(query_params.limit).all()
+    
+    return accounts, total
 
 def create_account(db: Session, account: AccountCreate):
-    db_account = Account(**account.dict())
+    db_account = Account(**account.model_dump())
     db.add(db_account)
     db.commit()
     db.refresh(db_account)
@@ -28,7 +31,7 @@ def create_account(db: Session, account: AccountCreate):
 def update_account(db: Session, account_id: int, account: AccountUpdate):
     db_account = get_account(db, account_id)
     if db_account:
-        update_data = account.dict(exclude_unset=True)
+        update_data = account.model_dump(exclude_unset=True)
         for key, value in update_data.items():
             setattr(db_account, key, value)
         db.commit()

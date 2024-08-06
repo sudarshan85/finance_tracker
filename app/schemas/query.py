@@ -1,6 +1,8 @@
 from pydantic import BaseModel
-from typing import List, Optional, Any, Union
+from typing import List, Optional, Any, Union, Generic, TypeVar
 from datetime import date, datetime
+
+T = TypeVar('T')
 
 class DateRange(BaseModel):
     start: Union[date, datetime]
@@ -21,3 +23,9 @@ class QueryParams(BaseModel):
     sort: Optional[List[SortOrder]] = None
     skip: int = 0
     limit: int = 100
+
+class PaginatedResponse(BaseModel, Generic[T]):
+    items: List[T]
+    total: int
+    page: int
+    size: int
